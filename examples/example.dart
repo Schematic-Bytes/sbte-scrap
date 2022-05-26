@@ -7,7 +7,8 @@ Future<void> main(List<String> arguments) async {
   print('Hello world!');
   final username = input("Enter the username: ");
   final password = input("Enter the password: ");
-  final sbte = SbteScrap(username: username, password: password);
+  final sbte = SbteScrap();
+  await sbte.initalize(username: username, password: password);
   final captchaImage = await sbte.getCaptcha();
   var file = File("captcha.jpeg");
   await file.writeAsBytes(captchaImage);

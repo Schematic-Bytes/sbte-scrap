@@ -14,22 +14,22 @@ import 'model.dart';
 
 class SbteScrap {
   late Dio _client;
-  String username;
-  String password;
+  String? username;
+  String? password;
   String? csrfToken;
+  String? captchaUrl;
   String? initalSalt;
 
-  SbteScrap({
-    required this.username,
-    required this.password,
-  }) {
-    _client = Dio(BaseOptions(
-      baseUrl: "https://www.sbte.kerala.gov.in",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:100.0)"
-            " Gecko/20100101 Firefox/100.0"
-      },
-    ));
+  SbteScrap() {
+    _client = Dio(
+      BaseOptions(
+        baseUrl: "https://www.sbte.kerala.gov.in",
+        headers: {
+          "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:100.0)"
+              " Gecko/20100101 Firefox/100.0"
+        },
+      ),
+    );
     var cookieJar = CookieJar();
     _client.interceptors.add(CookieManager(cookieJar));
   }
@@ -45,11 +45,22 @@ class SbteScrap {
   }
 
   // get the captcha image byte.
-  Future<List<int>> getCaptcha() async {
+  Future<void> initalize({
+    required username,
+    required password,
+  }) async {
+    this.username = username;
+    this.password = password;
     var res = await _client.get("/login");
-    var scrapData = _scrapLogin(res.data.toString());
+    _scrapLogin(res.data.toString());
+  }
+
+  Future<List<int>> getCaptcha() async {
+    if (captchaUrl == null) {
+      throw LoginNotReady();
+    }
     var captchaImage = await _client.get<List<int>>(
-      scrapData!,
+      captchaUrl!,
       options: Options(responseType: ResponseType.bytes),
     );
     if (captchaImage.data == null) {
@@ -59,7 +70,7 @@ class SbteScrap {
   }
 
   Future<void> _login(String solvedCaptcha) async {
-    if (initalSalt == null || csrfToken == null) {
+    if (initalSalt == null || csrfToken == null || password == null) {
       throw LoginNotReady();
     }
     var res = await _client.get("/loginprelogin/$username",
@@ -67,7 +78,7 @@ class SbteScrap {
     var finalSalt = res.data['uppu'];
     var formData = FormData.fromMap({
       "_peru": username,
-      "_thakol": _saltPassword(password, finalSalt, initalSalt!),
+      "_thakol": _saltPassword(password!, finalSalt, initalSalt!),
       "user[captcha]": solvedCaptcha,
       "_submit": "",
       "_csrf_token": csrfToken!,
@@ -152,14 +163,12 @@ class SbteScrap {
     return Semester(semesterNo: semester.sem, subjects: _scrapResult(data));
   }
 
-  String? _scrapLogin(String string) {
+  void _scrapLogin(String string) {
     var soup = parse(string);
     initalSalt = soup.getElementById("_uppu")?.attributes["value"];
     csrfToken =
         soup.querySelector("input[name=_csrf_token]")?.attributes["value"];
-    var captchaUrl =
-        soup.querySelector("img[title=captcha]")?.attributes["src"];
-    return captchaUrl;
+    captchaUrl = soup.querySelector("img[title=captcha]")?.attributes["src"];
   }
 
   List<Subject> _scrapResult(String htmlString) {

@@ -31,5 +31,5 @@ class SomethingWentWrong implements Exception {
 
 class LoginNotReady implements Exception {
   @override
-  String toString() => 'Login not ready call getCaptcha() first';
+  String toString() => 'Login not ready call login() first';
 }
