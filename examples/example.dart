@@ -13,6 +13,7 @@ Future<void> main(List<String> arguments) async {
   var file = File("captcha.jpeg");
   await file.writeAsBytes(captchaImage);
   final solvedCaptcha = input("Enter the solved captcha: ");
+  await sbte.login(solvedCaptcha);
   JsonEncoder encoder = JsonEncoder.withIndent('  ');
   await for (final sem in sbte.getExamResult(solvedCaptcha)) {
     String prettyprint = encoder.convert(sem.toJson());

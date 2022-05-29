@@ -13,6 +13,15 @@ class Semester {
       "subjects": subjects.map((e) => e.toJson()).toList(),
     };
   }
+
+  static Semester fromMap(Map<String, dynamic> map) {
+    return Semester(
+      semesterNo: map["semesterno"],
+      subjects: List.from(
+        List.from(map["subjects"]).map((e) => Subject.fromMap(e)),
+      ),
+    );
+  }
 }
 
 class Subject {
