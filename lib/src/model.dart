@@ -32,7 +32,7 @@ class Subject {
     required this.chance,
   });
 
-  Map<String, String> toJson() {
+  Map<String, dynamic> toJson() {
     return {
       "course": course,
       "registration": registration,
@@ -41,6 +41,17 @@ class Subject {
       "result": result,
       "chance": chance,
     };
+  }
+
+  static Subject fromMap(Map<String, dynamic> map) {
+    return Subject(
+      course: map["course"],
+      registration: map["registration"],
+      imark: map["imark"],
+      grade: map["grade"],
+      result: map["result"],
+      chance: map["chance"],
+    );
   }
 }
 

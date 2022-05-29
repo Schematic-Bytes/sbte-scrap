@@ -1,6 +1,6 @@
 name: sbte
 description: Library to scrap student exam result from 'https://www.sbte.kerala.gov.in/'.
-version: 1.0.2
+version: 1.0.3
 publish_to: none
 
 environment:
