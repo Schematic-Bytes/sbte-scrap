@@ -30,6 +30,8 @@ class SomethingWentWrong implements Exception {
 }
 
 class LoginNotReady implements Exception {
+  final String method;
+  const LoginNotReady(this.method);
   @override
-  String toString() => 'Login not ready call login() first';
+  String toString() => 'Login not ready call $method() first';
 }

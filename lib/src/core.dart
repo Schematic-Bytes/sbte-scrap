@@ -19,6 +19,7 @@ class SbteScrap {
   String? csrfToken;
   String? captchaUrl;
   String? initalSalt;
+  List<SemObj>? semObjs;
 
   SbteScrap() {
     _client = Dio(
@@ -37,11 +38,17 @@ class SbteScrap {
   // Stream of `Semester` should be called after
   // getCaptcha.
   Stream<Semester> getExamResult(String solvedCaptcha) async* {
-    await _login(solvedCaptcha);
-    var semesters = await _crawl();
-    for (var semester in semesters) {
+    if (semObjs == null) {
+      throw LoginNotReady("login");
+    }
+    for (var semester in semObjs!) {
       yield (await _getSemesterData(semester));
     }
+  }
+
+  Future<void> login(String solvedCaptcha) async {
+    await _login(solvedCaptcha);
+    semObjs = await _crawlSemesters();
   }
 
   // get the captcha image byte.
@@ -57,7 +64,7 @@ class SbteScrap {
 
   Future<List<int>> getCaptcha() async {
     if (captchaUrl == null) {
-      throw LoginNotReady();
+      throw LoginNotReady("initalize");
     }
     var captchaImage = await _client.get<List<int>>(
       captchaUrl!,
@@ -71,7 +78,7 @@ class SbteScrap {
 
   Future<void> _login(String solvedCaptcha) async {
     if (initalSalt == null || csrfToken == null || password == null) {
-      throw LoginNotReady();
+      throw LoginNotReady("initalize");
     }
     var res = await _client.get("/loginprelogin/$username",
         options: Options(responseType: ResponseType.json));
@@ -100,7 +107,7 @@ class SbteScrap {
     );
   }
 
-  Future<List<SemObj>> _crawl() async {
+  Future<List<SemObj>> _crawlSemesters() async {
     var _viewPath = "/students/student_profile/viewDetails";
     var res = await _client.get("/dash/student");
     var soup = parse(res.data.toString());
