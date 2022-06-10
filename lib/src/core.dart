@@ -12,6 +12,7 @@ import 'package:html/parser.dart';
 import 'errors.dart';
 import 'model.dart';
 
+// The core class used to fetch result
 class SbteScrap {
   late Dio _client;
   String? username;
@@ -35,8 +36,8 @@ class SbteScrap {
     _client.interceptors.add(CookieManager(cookieJar));
   }
 
-  // Stream of `Semester` should be called after
-  // getCaptcha.
+  // Stream of `Semester` should be called after login
+  // else it would throw LoginNotReady exception
   Stream<Semester> getExamResult(String solvedCaptcha) async* {
     if (semObjs == null) {
       throw LoginNotReady("login");
@@ -46,12 +47,17 @@ class SbteScrap {
     }
   }
 
+  // Used to login the user into sbte
+  // should be called after initalize else it would
+  // throw LoginNotReady exception
   Future<void> login(String solvedCaptcha) async {
     await _login(solvedCaptcha);
     semObjs = await _crawlSemesters();
   }
 
-  // get the captcha image byte.
+  // Used to initalize the client
+  // should be called before performing any other
+  // operations.
   Future<void> initalize({
     required username,
     required password,
@@ -62,6 +68,9 @@ class SbteScrap {
     _scrapLogin(res.data.toString());
   }
 
+  // Returns the bytes of the current captcha image
+  // should be called after initalize else it would
+  // throw a LoginNotReady exception
   Future<List<int>> getCaptcha() async {
     if (captchaUrl == null) {
       throw LoginNotReady("initalize");
@@ -76,12 +85,12 @@ class SbteScrap {
     return captchaImage.data!;
   }
 
+  // interal function used to login user into sbte
   Future<void> _login(String solvedCaptcha) async {
     if (initalSalt == null || csrfToken == null || password == null) {
       throw LoginNotReady("initalize");
     }
-    var res = await _client.get("/loginprelogin/$username",
-        options: Options(responseType: ResponseType.json));
+    var res = await _client.get("/loginprelogin/$username", options: Options(responseType: ResponseType.json));
     var finalSalt = res.data['uppu'];
     var formData = FormData.fromMap({
       "_peru": username,
@@ -107,13 +116,12 @@ class SbteScrap {
     );
   }
 
+  // internal function used to get id of each semester
   Future<List<SemObj>> _crawlSemesters() async {
     var _viewPath = "/students/student_profile/viewDetails";
     var res = await _client.get("/dash/student");
     var soup = parse(res.data.toString());
-    var dataGuid = soup
-        .querySelector("a[data-view-path='$_viewPath'][data-guid]")
-        ?.attributes['data-guid'];
+    var dataGuid = soup.querySelector("a[data-view-path='$_viewPath'][data-guid]")?.attributes['data-guid'];
     if (dataGuid == null) {
       var error = soup.querySelector("div.alert.alert-danger");
       var errorType = error?.nodes[4].text!.trim() ?? "";
@@ -127,16 +135,14 @@ class SbteScrap {
         throw SomethingWentWrong(errorType);
       }
     }
-    res = await _client.post(_viewPath,
-        data: FormData.fromMap({"objId": dataGuid}));
+    res = await _client.post(_viewPath, data: FormData.fromMap({"objId": dataGuid}));
     var form = res.data['form'];
     soup = parse(form);
     var name = soup.querySelector("div#sprofile-sd")!;
     var tags = name.querySelectorAll("div[data-blockid][data-blockno]");
     List<SemObj> semesters = [];
     for (var t in tags) {
-      var sem = RegExp(r"\d").firstMatch(t.text)?.group(0) ??
-          t.attributes['data-blockno']!;
+      var sem = RegExp(r"\d").firstMatch(t.text)?.group(0) ?? t.attributes['data-blockno']!;
       semesters.add(
         SemObj(
           sem: sem,
@@ -149,6 +155,7 @@ class SbteScrap {
     return semesters;
   }
 
+  // internal function used to fetch data of each semester
   Future<Semester> _getSemesterData(
     SemObj semester,
   ) async {
@@ -170,14 +177,15 @@ class SbteScrap {
     return Semester(semesterNo: semester.sem, subjects: _scrapResult(data));
   }
 
+  // internal function used to parse information needed to login
   void _scrapLogin(String string) {
     var soup = parse(string);
     initalSalt = soup.getElementById("_uppu")?.attributes["value"];
-    csrfToken =
-        soup.querySelector("input[name=_csrf_token]")?.attributes["value"];
+    csrfToken = soup.querySelector("input[name=_csrf_token]")?.attributes["value"];
     captchaUrl = soup.querySelector("img[title=captcha]")?.attributes["src"];
   }
 
+  // internal function used to parse fetched data into object
   List<Subject> _scrapResult(String htmlString) {
     var soup = parse(htmlString);
     var table = soup.getElementsByTagName("table")[0];
@@ -197,6 +205,7 @@ class SbteScrap {
     return subjects;
   }
 
+  // internal function to salt a given password
   String _saltPassword(String pass, String salt1, String salt2) {
     List<int> enc(String s) => utf8.encode(s);
     var hexPass = sha256.convert(enc(pass));
@@ -208,6 +217,7 @@ class SbteScrap {
     return finalSalt.toString();
   }
 
+  // used to close the client after use
   void close() {
     _client.close();
   }
@@ -219,11 +229,7 @@ class Giwe {
   const Giwe(this.itemList);
   String giwe(int index) {
     try {
-      return itemList
-          .elementAt(index)
-          .text
-          .trim()
-          .replaceAll(RegExp(r"&amp;"), "");
+      return itemList.elementAt(index).text.trim().replaceAll(RegExp(r"&amp;"), "");
     } on RangeError {
       return "";
     }
