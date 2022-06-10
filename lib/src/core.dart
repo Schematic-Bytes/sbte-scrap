@@ -173,8 +173,15 @@ class SbteScrap {
         },
       ),
     );
-    var data = json.decode(res.data)["form"];
-    return Semester(semesterNo: semester.sem, subjects: _scrapResult(data));
+    final String data = json.decode(res.data)["form"];
+    final soup = parse(data);
+    final pdfLink = _scrapPdf(soup);
+    final subject = _scrapResult(soup);
+    return Semester(
+      semesterNo: semester.sem,
+      subjects: subject,
+      gradePdf: (await pdfLink),
+    );
   }
 
   // internal function used to parse information needed to login
@@ -186,8 +193,7 @@ class SbteScrap {
   }
 
   // internal function used to parse fetched data into object
-  List<Subject> _scrapResult(String htmlString) {
-    var soup = parse(htmlString);
+  List<Subject> _scrapResult(Document soup) {
     var table = soup.getElementsByTagName("table")[0];
     List<Subject> subjects = [];
     for (var rows in table.getElementsByTagName("tr").skip(1)) {
@@ -203,6 +209,22 @@ class SbteScrap {
       subjects.add(subject);
     }
     return subjects;
+  }
+
+  // internal function used to get the grade pdf of a semester
+  Future<List<int>?> _scrapPdf(Document soup) async {
+    final pdfLink = soup.getElementsByTagName("a");
+    if (pdfLink.isNotEmpty) {
+      final link = pdfLink.first.attributes["href"];
+      if (link == null) {
+        return null;
+      }
+      final pdf = await _client.get<List<int>>(link, options: Options(responseType: ResponseType.bytes));
+      if (pdf.headers.value("Content-Type") == "application/pdf") {
+        return pdf.data;
+      }
+    }
+    return null;
   }
 
   // internal function to salt a given password

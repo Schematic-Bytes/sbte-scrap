@@ -1,10 +1,12 @@
 class Semester {
   final String semesterNo;
+  final List<int>? gradePdf;
   List<Subject> subjects = [];
 
   Semester({
     required this.semesterNo,
     required this.subjects,
+    this.gradePdf,
   });
 
   Map<String, dynamic> toJson() {

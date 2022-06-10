@@ -16,6 +16,10 @@ Future<void> main(List<String> arguments) async {
   await sbte.login(solvedCaptcha);
   JsonEncoder encoder = JsonEncoder.withIndent('  ');
   await for (final sem in sbte.getExamResult(solvedCaptcha)) {
+    if (sem.gradePdf != null) {
+      final file = File("${sem.semesterNo}.pdf");
+      await file.writeAsBytes(sem.gradePdf!);
+    }
     String prettyprint = encoder.convert(sem.toJson());
     print(prettyprint);
   }
