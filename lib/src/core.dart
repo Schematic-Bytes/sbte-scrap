@@ -38,7 +38,7 @@ class SbteScrap {
 
   // Stream of `Semester` should be called after login
   // else it would throw LoginNotReady exception
-  Stream<Semester> getExamResult(String solvedCaptcha) async* {
+  Stream<Semester> getExamResult() async* {
     if (semObjs == null) {
       throw LoginNotReady("login");
     }

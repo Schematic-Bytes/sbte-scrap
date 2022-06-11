@@ -15,7 +15,7 @@ Future<void> main(List<String> arguments) async {
   final solvedCaptcha = input("Enter the solved captcha: ");
   await sbte.login(solvedCaptcha);
   JsonEncoder encoder = JsonEncoder.withIndent('  ');
-  await for (final sem in sbte.getExamResult(solvedCaptcha)) {
+  await for (final sem in sbte.getExamResult()) {
     if (sem.gradePdf != null) {
       final file = File("${sem.semesterNo}.pdf");
       await file.writeAsBytes(sem.gradePdf!);
