@@ -21,8 +21,8 @@ To use SBTE-Scrap, simply add the package to pubspec.yaml
 dependencies:
     sbte:
         git: 
-        url: https://github.com/Schematic-Bytes/sbte-scrap
-        ref: master
+            url: https://github.com/Schematic-Bytes/sbte-scrap
+            ref: master
 ```
 
 
